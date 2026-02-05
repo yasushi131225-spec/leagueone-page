@@ -225,9 +225,26 @@ async function fetchRenderedHtml(page, url) {
   page.setDefaultTimeout(120000);
 
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 120000 });
-  // “試合経過” とかが出るまで少し待つ（出なくても進む）
-  await page.waitForTimeout(1500);
 
+  // どのページかで待つ条件を変える
+  const waitKey =
+    url.includes("t1=1") ? "スターティング" :
+    url.includes("t1=2") ? "試合経過" :
+    null;
+
+  if (waitKey) {
+    try {
+      await page.waitForFunction(
+        (key) => (document.body?.innerText || "").includes(key),
+        waitKey,
+        { timeout: 90000 }
+      );
+    } catch (_) {
+      // 出なくても進む（ただし精度落ちる）
+    }
+  }
+
+  await page.waitForTimeout(1500);
   return await page.content();
 }
 
