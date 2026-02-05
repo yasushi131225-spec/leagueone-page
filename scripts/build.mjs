@@ -8,7 +8,8 @@ function ensureDir(p) { fs.mkdirSync(p, { recursive: true }); }
 function nowJST() { return new Date().toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" }); }
 
 async function main() {
-  ensureDir("public/live");
+  // ★ GitHub Pages が参照する docs に出す
+  ensureDir("docs/live");
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
@@ -16,13 +17,11 @@ async function main() {
   });
   const page = await context.newPage();
 
-  // ★ networkidle はやめる。タイムアウトも伸ばす
   page.setDefaultNavigationTimeout(120000);
   page.setDefaultTimeout(120000);
 
   await page.goto(URL_TIMELINE, { waitUntil: "domcontentloaded", timeout: 120000 });
 
-  // ★ “試合経過” が画面に出るまで待つ（出なければ諦めて本文だけ取る）
   try {
     await page.waitForFunction(
       () => (document.body?.innerText || "").includes("試合経過"),
@@ -30,7 +29,6 @@ async function main() {
     );
   } catch (_) {}
 
-  // 少しだけ待って安定させる
   await page.waitForTimeout(1500);
 
   const bodyText = await page.evaluate(() => document.body?.innerText || "");
@@ -42,8 +40,8 @@ async function main() {
     `# source: ${URL_TIMELINE}\n\n` +
     bodyText.slice(0, 8000) + "\n";
 
-  fs.writeFileSync(`public/live/match-${MATCH_ID}.txt`, out, "utf8");
-  console.log("Wrote public/live/match-" + MATCH_ID + ".txt");
+  fs.writeFileSync(`docs/live/match-${MATCH_ID}.txt`, out, "utf8");
+  console.log("Wrote docs/live/match-" + MATCH_ID + ".txt");
 }
 
 main().catch((e) => {
