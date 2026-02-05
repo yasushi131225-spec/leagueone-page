@@ -285,6 +285,8 @@ async function main() {
 }
 
 main().catch((e) => {
+  fs.writeFileSync(`docs/live/debug-members-${MATCH_ID}.html`, membersHtml, "utf8");
+  fs.writeFileSync(`docs/live/debug-timeline-${MATCH_ID}.html`, timelineHtml, "utf8");
   console.error(e);
   process.exit(1);
 });
