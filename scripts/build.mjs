@@ -254,6 +254,9 @@ async function fetchRenderedHtml(page, url) {
   return await page.content();
 }
 
+let membersHtml = "";
+let timelineHtml = "";
+
 async function main() {
   ensureDir("public/live");
   ensureDir("docs/live");
@@ -265,19 +268,22 @@ async function main() {
   });
   const page = await context.newPage();
 
-  const membersHtml = await fetchRenderedHtml(page, URL_MEMBERS);
+  membersHtml = await fetchRenderedHtml(page, URL_MEMBERS);
   const nameToNo = parseMembers(membersHtml);
 
-  const timelineHtml = await fetchRenderedHtml(page, URL_TIMELINE);
+  timelineHtml = await fetchRenderedHtml(page, URL_TIMELINE);
   const events = parseTimeline(timelineHtml);
 
   await browser.close();
 
   const outText = buildLines(events, nameToNo);
 
-  // Pagesで見れるよう docs/live に出す（必要なら public/live にも）
   fs.writeFileSync(`docs/live/match-${MATCH_ID}.txt`, outText, "utf8");
   fs.writeFileSync(`public/live/match-${MATCH_ID}.txt`, outText, "utf8");
+
+  // ★ ここで毎回デバッグHTMLも残しとく（確認が楽）
+  fs.writeFileSync(`docs/live/debug-members-${MATCH_ID}.html`, membersHtml, "utf8");
+  fs.writeFileSync(`docs/live/debug-timeline-${MATCH_ID}.html`, timelineHtml, "utf8");
 
   console.log("members:", nameToNo.size);
   console.log("events:", events.length);
@@ -285,8 +291,11 @@ async function main() {
 }
 
 main().catch((e) => {
-  fs.writeFileSync(`docs/live/debug-members-${MATCH_ID}.html`, membersHtml, "utf8");
-  fs.writeFileSync(`docs/live/debug-timeline-${MATCH_ID}.html`, timelineHtml, "utf8");
+  try {
+    ensureDir("docs/live");
+    if (membersHtml) fs.writeFileSync(`docs/live/debug-members-${MATCH_ID}.html`, membersHtml, "utf8");
+    if (timelineHtml) fs.writeFileSync(`docs/live/debug-timeline-${MATCH_ID}.html`, timelineHtml, "utf8");
+  } catch (_) {}
   console.error(e);
   process.exit(1);
 });
