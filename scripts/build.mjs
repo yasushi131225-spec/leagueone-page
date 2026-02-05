@@ -227,8 +227,16 @@ function buildLines(events, nameToNo) {
 }
 
 async function fetchRenderedHtml(page, url) {
+  console.log("goto:", url);
+  console.log("after goto page.url():", page.url());
   page.setDefaultNavigationTimeout(120000);
   page.setDefaultTimeout(120000);
+
+  if (url.includes("t1=1")) {
+  await page.waitForTimeout(4000);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForTimeout(1500);
+}
 
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 120000 });
 
