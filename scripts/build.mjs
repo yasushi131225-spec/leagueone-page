@@ -35,27 +35,33 @@ function displayName(raw) {
   return t.replaceAll("=", "＝");
 }
 
-// members: "1. 岡本 慎太郎 182cm/..." みたいな行から辞書化
 function parseMembers(html) {
   const $ = load(html);
-  const text = $.root().text().split("\n").map(s => s.trim()).filter(Boolean);
+
+  // まず全テキストから行を作る
+  const lines = $.root().text().split("\n").map(s => s.trim()).filter(Boolean);
 
   const map = new Map();
-  let mode = null; // start/res
-  for (const line of text) {
+  let mode = null; // "start" | "res"
+
+  for (const line of lines) {
     if (line.includes("スターティング")) { mode = "start"; continue; }
     if (line.includes("リサーブ")) { mode = "res"; continue; }
 
-    const m = line.match(/^(\d{1,2})\.\s*([^\d]+?)\s+\d{2,3}cm\//);
+    // 例:
+    // "1. 岡本 慎太郎 182cm/..."
+    // "1 岡本 慎太郎 182cm/..."
+    const m = line.match(/^(\d{1,2})[.\s]+(.+?)\s+\d{2,3}cm\s*\//);
     if (!m) continue;
 
     const idx = Number(m[1]);
     const name = m[2].trim();
-    if (!name) continue;
+    if (!name || !mode) continue;
 
-    if (mode === "start") map.set(name, idx);     // 1..15
-    if (mode === "res") map.set(name, 15 + idx);  // 16..23
+    if (mode === "start") map.set(name, idx);      // 1..15
+    if (mode === "res") map.set(name, 15 + idx);   // 16..23
   }
+
   return map;
 }
 
